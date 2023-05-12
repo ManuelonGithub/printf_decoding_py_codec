@@ -303,21 +303,3 @@ def getregentry():
 
 
 
-
-if __name__ == "__main__":
-	codecs.register(lambda c: getregentry() if c == 'printf_df' else None)
-
-	print(bytes.decode(b'The value is \xA5010.4f\x00\x00\x90\xbf.\n', 'printf_df'))
-	print(bytes.decode(b'The value is \xA50*\x0A.*\x04f\x00\x00\x90\xbf.\n', 'printf_df'))
-	print(bytes.decode(b'The value is \xA5+20X\xef\xbe\xad\xde.\n', 'printf_df'))
-	print(bytes.decode(b'The value is \xA5%\xA5uc\x00\x00\x00.\n', 'printf_df'))
-	print(bytes.decode(b'The data is \"\xA5-11shello\x00\".\n', 'printf_df'))
-	print(bytes.decode(b'The data is \"\xA5-11.5shello there\x00\".\n', 'printf_df'))
-	print(bytes.decode(b'The value is \xA5#+- 010uc\x00\x00\x00.\n', 'printf_df'))
-	print(bytes.decode(b'The value is \xA5lu\x63\x00\x00\x00 and the data is \"\xA5s\x68\x65\x6C\x6C\x6F\x00\".\n', 'printf_df'))
-
-	print(bytes.decode(b'The value is \xA5ll\xF5\x63 and the data is \"\xA5s\x68\x65\x6C\x6C\x6F\x00\".\n', 'printf_df'))
-	print(bytes.decode(b'The value is \xA5hh\xF8\x12\xA5hh\xF8\x34\xA5hh\xF8\x56\xA5hh\xF8\x78\n', 'printf_df'))
-	
-	print(bytes.decode(b'The value is \xA5hhd\xff', 'printf_df'))
-	print(bytes.decode(b'The value is \xA5123456\0 and the other value is \xA5\xEF@', 'printf_df'))
