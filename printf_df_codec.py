@@ -45,10 +45,24 @@ VALUE_FORMAT = {
 	'hhd': '<b', 'hhu': '<B', 'hho': '<B', 'hhx': '<B', 'hhX': '<B',
 }
 
+SPECIAL_CHARS = {
+	'\xD8': 'X',
+	'\xE4': 'd',
+	'\xE9': 'i',
+	'\xEF': 'o',
+	'\xF5': 'u',
+	'\xF8': 'x',
+}
+
 NON_VALUE_CHARS     = set('cs%\0')
-SPECIAL_VAL_CHARS   = set('\xE4\xE9\xEF\xF8\xD8\xF5')
 FLOAT_VAL_CHARS     = set('eEfFgG')
-SPECIFIER_CHARS     = set('diuoxX') | NON_VALUE_CHARS | SPECIAL_VAL_CHARS | FLOAT_VAL_CHARS
+
+SPECIFIER_CHARS     = (
+	set(SPECIAL_CHARS.values()) | 
+	set(SPECIAL_CHARS.keys()) | 
+	NON_VALUE_CHARS | 
+	FLOAT_VAL_CHARS
+)
 
 def sprintf(print_fmt: str, val: any) -> str:
 	try:
@@ -122,8 +136,8 @@ def printf_decode(data, errors='strict') -> tuple[str, int]:
 			r = r + sprintf(print_fmt, struct.unpack(val_fmt, print_data[i:i+val_len])[0])
 			i = i + val_len
 
-		elif (c in SPECIAL_VAL_CHARS):
-			print_fmt = parse_length_chars(print_fmt[:-1], chr(ord(c) - 128))[0]
+		elif (c in SPECIAL_CHARS):
+			print_fmt = parse_length_chars(print_fmt[:-1], SPECIAL_CHARS[c])[0]
 			r = r + sprintf(print_fmt, print_data[i])
 			i = i + 1
 
@@ -217,8 +231,8 @@ class Printf_IncrementalDecoder(codecs.IncrementalDecoder):
 					self.val_len = struct.calcsize(self.val_fmt)
 					self.state = self.CAP_VALUE
 
-				elif c in SPECIAL_VAL_CHARS:
-					self.print_fmt = parse_length_chars(self.print_fmt[:-1], chr(ord(c) - 128))[0]
+				elif c in SPECIAL_CHARS:
+					self.print_fmt = parse_length_chars(self.print_fmt[:-1], SPECIAL_CHARS[c])[0]
 					self.val_fmt = '<B'
 					self.val_len = 1
 					self.state = self.CAP_VALUE
@@ -290,3 +304,20 @@ def getregentry():
 
 
 
+if __name__ == "__main__":
+	codecs.register(lambda c: getregentry() if c == 'printf_df' else None)
+
+	print(bytes.decode(b'The value is \xA5010.4f\x00\x00\x90\xbf.\n', 'printf_df'))
+	print(bytes.decode(b'The value is \xA50*\x0A.*\x04f\x00\x00\x90\xbf.\n', 'printf_df'))
+	print(bytes.decode(b'The value is \xA5+20X\xef\xbe\xad\xde.\n', 'printf_df'))
+	print(bytes.decode(b'The value is \xA5%\xA5uc\x00\x00\x00.\n', 'printf_df'))
+	print(bytes.decode(b'The data is \"\xA5-11shello\x00\".\n', 'printf_df'))
+	print(bytes.decode(b'The data is \"\xA5-11.5shello there\x00\".\n', 'printf_df'))
+	print(bytes.decode(b'The value is \xA5#+- 010uc\x00\x00\x00.\n', 'printf_df'))
+	print(bytes.decode(b'The value is \xA5lu\x63\x00\x00\x00 and the data is \"\xA5s\x68\x65\x6C\x6C\x6F\x00\".\n', 'printf_df'))
+
+	print(bytes.decode(b'The value is \xA5ll\xF5\x63 and the data is \"\xA5s\x68\x65\x6C\x6C\x6F\x00\".\n', 'printf_df'))
+	print(bytes.decode(b'The value is \xA5hh\xF8\x12\xA5hh\xF8\x34\xA5hh\xF8\x56\xA5hh\xF8\x78\n', 'printf_df'))
+	
+	print(bytes.decode(b'The value is \xA5hhd\xff', 'printf_df'))
+	print(bytes.decode(b'The value is \xA5123456\0 and the other value is \xA5\xEF@', 'printf_df'))
